@@ -1,11 +1,14 @@
 package com.tau.steps;
 import static org.junit.Assert.assertEquals;
 
+import java.net.MalformedURLException;
 import java.util.List;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.remote.DesiredCapabilities;
+import org.openqa.selenium.remote.RemoteWebDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
 
 import com.aventstack.extentreports.ExtentReports;
@@ -18,6 +21,7 @@ import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
+import java.net.URL;
 import junit.framework.Assert;
 
 public class Step {
@@ -26,9 +30,11 @@ public class Step {
     private static ExtentReports extent;
     private static ExtentTest test;
     @Before
-    public void setUp() {
-    	  System.setProperty("webdriver.gecko.driver", "D:\\Softwares\\Eclipse Java\\tau-cucumber-course\\src\\test\\resources\\geckodriver.exe");
-    		driver=new FirefoxDriver();
+    public void setUp()throws MalformedURLException  {
+    	 DesiredCapabilities capabilities = new DesiredCapabilities();
+         capabilities.setBrowserName("firefox");
+         
+         driver = new RemoteWebDriver(new URL("http://172.16.2.83:4444/wd/hub"), capabilities);
         ExtentHtmlReporter htmlReporter = new ExtentHtmlReporter("Report.html");
         extent = new ExtentReports();
         extent.attachReporter(htmlReporter);
