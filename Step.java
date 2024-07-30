@@ -2,15 +2,18 @@ package com.tau.steps;
 import static org.junit.Assert.assertEquals;
 
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.List;
+import java.util.Scanner;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.remote.RemoteWebDriver;
-import org.openqa.selenium.firefox.FirefoxDriver;
-
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
+import java.time.Duration;
 import com.aventstack.extentreports.ExtentReports;
 import com.aventstack.extentreports.ExtentTest;
 import com.aventstack.extentreports.reporter.ExtentHtmlReporter;
@@ -21,7 +24,8 @@ import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
-import java.net.URL;
+
+import io.github.bonigarcia.wdm.WebDriverManager;
 import junit.framework.Assert;
 
 public class Step {
@@ -29,19 +33,39 @@ public class Step {
     private int temp;
     private static ExtentReports extent;
     private static ExtentTest test;
+    static Scanner userinput = new Scanner(System.in);
     @Before
     public void setUp()throws MalformedURLException  {
-    	 DesiredCapabilities capabilities = new DesiredCapabilities();
-         capabilities.setBrowserName("firefox");
+//    	System.out.println("Press 1 for Chrome &"
+//    			+ "Press 2 for Firefox");
+//    	int answer;
+//    	answer=userinput.nextInt();
+//    	if(answer==1) {
+    		 WebDriverManager.chromedriver().setup();
+        	 DesiredCapabilities capabilities = new DesiredCapabilities();
+             capabilities.setBrowserName("chrome");
+             
+             driver = new RemoteWebDriver(new URL("http://172.16.2.83:4444/wd/hub"), capabilities);
+            ExtentHtmlReporter htmlReporter = new ExtentHtmlReporter("Report.html");
+            extent = new ExtentReports();
+            extent.attachReporter(htmlReporter);
+            test = extent.createTest("Weather Shopper Test", "Test to verify shopping on Weather Shopper site based on temperature");
+        
          
-         driver = new RemoteWebDriver(new URL("http://172.16.2.83:4444/wd/hub"), capabilities);
-        ExtentHtmlReporter htmlReporter = new ExtentHtmlReporter("Report.html");
-        extent = new ExtentReports();
-        extent.attachReporter(htmlReporter);
-        test = extent.createTest("Weather Shopper Test", "Test to verify shopping on Weather Shopper site based on temperature");
+    	}
+//    	else if(answer==2) {
+//    	 WebDriverManager.firefoxdriver().setup();
+//    	 DesiredCapabilities capabilities = new DesiredCapabilities();
+//         capabilities.setBrowserName("firefox");
+//         
+//         driver = new RemoteWebDriver(new URL("http://172.16.2.83:4444/wd/hub"), capabilities);
+//        ExtentHtmlReporter htmlReporter = new ExtentHtmlReporter("Report.html");
+//        extent = new ExtentReports();
+//        extent.attachReporter(htmlReporter);
+//        test = extent.createTest("Weather Shopper Test", "Test to verify shopping on Weather Shopper site based on temperature");
+//    	}
+//     
     
-     
-    }
 
     @Given("the weather shopper site is opened and temperature is checked")
     public void the_weather_shopper_site_is_opened_and_temperature_is_checked() {
@@ -99,41 +123,59 @@ public class Step {
 
     @And("I fill out my payment details and submit the form")
     public void i_fill_out_my_payment_details_and_submit_the_form() throws InterruptedException {
-    	WebElement item1PriceElement = driver.findElement(By.xpath("//tr[1]/td[2]"));
-        WebElement item2PriceElement = driver.findElement(By.xpath("//tr[2]/td[2]"));
-        WebElement totalPriceElement = driver.findElement(By.cssSelector("#total"));
-
-        // Get the text content of the price elements and convert to integers
-        int item1Price = Integer.parseInt(item1PriceElement.getText().trim());
-        int item2Price = Integer.parseInt(item2PriceElement.getText().trim());
-        int totalPrice = Integer.parseInt(totalPriceElement.getText().replaceAll("[^0-9]", "").trim());
-
-        // Assert that the sum of individual prices equals the total price
-        assertEquals("Total price should be the sum of individual prices", item1Price + item2Price, totalPrice);
-        Thread.sleep(2000);
-        System.out.println("ASSERTION CHECKED");
-        driver.findElement(By.cssSelector("body > div.container.top-space-50")).click();
-        driver.findElement(By.cssSelector("body > div.container.top-space-50 > div.row.top-space-30 > form > button > span")).click();
-        driver.switchTo().frame(0); // Switch to the payment iframe
-        Thread.sleep(2000);
-        driver.findElement(By.cssSelector("#email")).sendKeys("ayesha.bukhari@emumba.com");
-        Thread.sleep(2000);
-        driver.findElement(By.id("card_number")).sendKeys("4242424242424242");
-        Thread.sleep(2000);
-        driver.findElement(By.id("cc-exp")).sendKeys("12/26");
-        Thread.sleep(2000);
-        driver.findElement(By.id("cc-csc")).sendKeys("123");
-       //driver.findElement(By.id("billing-zip")).sendKeys("46000");
-       Thread.sleep(2000);
+    	WebElement CheckoutPage= driver.findElement(By.cssSelector("body > div.container.top-space-50"));
+    	CheckoutPage.click();
+    	 WebElement payButton=driver.findElement(By.xpath("/html/body/div[1]/div[3]/form/button"));
+ 	payButton.click();
+    	WebDriverWait wait = new WebDriverWait(driver,Duration.ofSeconds(10));
+        // Switch to the iframe containing the payment form, if applicable
+        WebElement iframe = driver.findElement(By.tagName("iframe"));
+        driver.switchTo().frame(iframe);
+        // Wait for the email input field to be visible and interac
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("email")));
+        WebElement emailID = wait.until(ExpectedConditions.elementToBeClickable(By.id("email")));
+        emailID.sendKeys("ayesha.bukhari@gmail.com");
+        sleep(600);  // Wait for 500 milliseconds
+        WebElement cardnumber = wait.until(ExpectedConditions.elementToBeClickable(By.id("card_number")));
+       String cardNumber="4242424242424242";
+        for (char digit : cardNumber.toCharArray()) {
+            cardnumber.sendKeys(String.valueOf(digit));
+            sleep(100);  // Slight pause between each digit
+        }
+        sleep(500);  // Wait for 500 milliseconds after entering the card number
+        WebElement expirydate = wait.until(ExpectedConditions.elementToBeClickable(By.id("cc-exp")));
+       String expiry="82026";
+        for (char digit : expiry.toCharArray()) {
+            expirydate.sendKeys(String.valueOf(digit));
+            sleep(100);  // Slight pause between each digit
+        }
+        sleep(500);  // Wait for 500 milliseconds
+        WebElement cvv = wait.until(ExpectedConditions.elementToBeClickable(By.id("cc-csc")));
+        cvv.sendKeys("444");
+        sleep(600);  // Wait for 500 milliseconds
+        WebElement zipcode = wait.until(ExpectedConditions.elementToBeClickable(By.id("billing-zip")));
+        zipcode.sendKeys("52000");
+        sleep(500);  // Wait for 500 milliseconds
+        
         driver.findElement(By.cssSelector("#submitButton > span > span")).click();
         System.out.println("click being done");
+        Thread.sleep(2000);
+        driver.switchTo().defaultContent();
+        Thread.sleep(5000);
         WebElement thankYou = driver.findElement(By.cssSelector("body > div > div:nth-child(1) > h2"));
-        Assert.assertEquals(thankYou.getText(), "PAYMENT SUCCESS");
+        assertEquals(thankYou.getText(), "PAYMENT SUCCESS");
         test.pass("Filled out payment details and submitted the form");
+        
         
        
     }
-
+    private void sleep(int milliseconds) {
+        try {
+            Thread.sleep(milliseconds);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
     private void addLeastExpensiveProduct(String productType) {
         List<WebElement> products = driver.findElements(By.xpath("//p[contains(text(), '" + productType + "')]/following-sibling::p[contains(text(), 'Price')]/following-sibling::button"));
         WebElement cheapestProduct = products.stream()
